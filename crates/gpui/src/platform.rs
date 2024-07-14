@@ -34,10 +34,9 @@ use async_task::Runnable;
 use futures::channel::oneshot;
 use parking::Unparker;
 use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
-use seahash::SeaHasher;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 use std::time::{Duration, Instant};
 use std::{
     fmt::{self, Debug},
@@ -991,12 +990,5 @@ impl ClipboardItem {
         self.metadata
             .as_ref()
             .and_then(|m| serde_json::from_str(m).ok())
-    }
-
-    #[cfg_attr(target_os = "linux", allow(dead_code))]
-    pub(crate) fn text_hash(text: &str) -> u64 {
-        let mut hasher = SeaHasher::new();
-        text.hash(&mut hasher);
-        hasher.finish()
     }
 }

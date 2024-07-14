@@ -20,7 +20,7 @@ sum_tree = { path = "crates/sum_tree" }
 util = { path = "crates/util" }
 
 anyhow = "1.0.57"
-ashpd = { git = "https://github.com/bilelmoussaoui/ashpd", rev = "29f2e1a" }
+ashpd = { git = "https://github.com/bilelmoussaoui/ashpd", rev = "29f2e1a6f4b0911f504658f5f4630c02e01b13f2" }
 async-fs = "1.6"
 blade-graphics = { git = "https://github.com/kvark/blade", rev = "473b71b20d492f753e1f6a938c0e60ac755762b0" }
 blade-macros = { git = "https://github.com/kvark/blade", rev = "473b71b20d492f753e1f6a938c0e60ac755762b0" }
