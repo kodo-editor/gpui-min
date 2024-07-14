@@ -4,11 +4,11 @@ use crate::{
     WindowParams,
 };
 use anyhow::Result;
-use collections::VecDeque;
 use futures::channel::oneshot;
 use parking_lot::Mutex;
 use std::{
     cell::RefCell,
+    collections::VecDeque,
     path::{Path, PathBuf},
     rc::{Rc, Weak},
     sync::Arc,

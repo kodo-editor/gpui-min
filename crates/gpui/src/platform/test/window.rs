@@ -4,10 +4,10 @@ use crate::{
     Size, TestPlatform, TileId, WindowAppearance, WindowBackgroundAppearance, WindowBounds,
     WindowParams,
 };
-use collections::HashMap;
 use parking_lot::Mutex;
 use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 use std::{
+    collections::HashMap,
     rc::{Rc, Weak},
     sync::{self, Arc},
 };

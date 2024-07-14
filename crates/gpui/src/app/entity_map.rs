@@ -17,9 +17,6 @@ use std::{
     thread::panicking,
 };
 
-#[cfg(any(test, feature = "test-support"))]
-use collections::HashMap;
-
 slotmap::new_key_type! {
     /// A unique identifier for a model or view across the application.
     pub struct EntityId;
@@ -71,7 +68,7 @@ impl EntityMap {
                 #[cfg(any(test, feature = "test-support"))]
                 leak_detector: LeakDetector {
                     next_handle_id: 0,
-                    entity_handles: HashMap::default(),
+                    entity_handles: std::collections::HashMap::default(),
                 },
             })),
         }
@@ -656,7 +653,10 @@ pub(crate) struct HandleId {
 #[cfg(any(test, feature = "test-support"))]
 pub(crate) struct LeakDetector {
     next_handle_id: u64,
-    entity_handles: HashMap<EntityId, HashMap<HandleId, Option<backtrace::Backtrace>>>,
+    entity_handles: std::collections::HashMap<
+        EntityId,
+        std::collections::HashMap<HandleId, Option<backtrace::Backtrace>>,
+    >,
 }
 
 #[cfg(any(test, feature = "test-support"))]

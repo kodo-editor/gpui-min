@@ -1,9 +1,9 @@
 use crate::{point, px, FontId, GlyphId, Pixels, PlatformTextSystem, Point, Size};
-use collections::FxHashMap;
 use parking_lot::{Mutex, RwLock, RwLockUpgradableReadGuard};
 use smallvec::SmallVec;
 use std::{
     borrow::Borrow,
+    collections::HashMap,
     hash::{Hash, Hasher},
     ops::Range,
     sync::Arc,
@@ -341,8 +341,8 @@ pub(crate) struct LineLayoutCache {
 
 #[derive(Default)]
 struct FrameCache {
-    lines: FxHashMap<Arc<CacheKey>, Arc<LineLayout>>,
-    wrapped_lines: FxHashMap<Arc<CacheKey>, Arc<WrappedLineLayout>>,
+    lines: HashMap<Arc<CacheKey>, Arc<LineLayout>>,
+    wrapped_lines: HashMap<Arc<CacheKey>, Arc<WrappedLineLayout>>,
     used_lines: Vec<Arc<CacheKey>>,
     used_wrapped_lines: Vec<Arc<CacheKey>>,
 }

@@ -5,10 +5,9 @@ use crate::{
 use anyhow::Result;
 use blade_graphics as gpu;
 use blade_util::{BufferBelt, BufferBeltDescriptor};
-use collections::FxHashMap;
 use etagere::BucketedAtlasAllocator;
 use parking_lot::Mutex;
-use std::{borrow::Cow, ops, sync::Arc};
+use std::{borrow::Cow, collections::HashMap, ops, sync::Arc};
 
 pub(crate) const PATH_TEXTURE_FORMAT: gpu::TextureFormat = gpu::TextureFormat::R16Float;
 
@@ -24,7 +23,7 @@ struct BladeAtlasState {
     gpu: Arc<gpu::Context>,
     upload_belt: BufferBelt,
     storage: BladeAtlasStorage,
-    tiles_by_key: FxHashMap<AtlasKey, AtlasTile>,
+    tiles_by_key: HashMap<AtlasKey, AtlasTile>,
     initializations: Vec<AtlasTextureId>,
     uploads: Vec<PendingUpload>,
 }

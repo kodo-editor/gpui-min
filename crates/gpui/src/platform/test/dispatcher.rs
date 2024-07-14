@@ -1,11 +1,11 @@
 use crate::{PlatformDispatcher, TaskLabel};
 use async_task::Runnable;
 use backtrace::Backtrace;
-use collections::{HashMap, HashSet, VecDeque};
 use parking::{Parker, Unparker};
 use parking_lot::Mutex;
 use rand::prelude::*;
 use std::{
+    collections::{HashMap, HashSet, VecDeque},
     future::Future,
     ops::RangeInclusive,
     pin::Pin,

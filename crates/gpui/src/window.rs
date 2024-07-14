@@ -17,7 +17,6 @@ use crate::{
     SUBPIXEL_VARIANTS,
 };
 use anyhow::{anyhow, Context as _, Result};
-use collections::{FxHashMap, FxHashSet};
 use derive_more::{Deref, DerefMut};
 use futures::channel::oneshot;
 use futures::{future::Shared, FutureExt};
@@ -27,6 +26,7 @@ use parking_lot::RwLock;
 use refineable::Refineable;
 use slotmap::SlotMap;
 use smallvec::SmallVec;
+use std::collections::{HashMap, HashSet};
 use std::{
     any::{Any, TypeId},
     borrow::{Borrow, BorrowMut, Cow},
@@ -398,7 +398,7 @@ pub(crate) struct DeferredDraw {
 pub(crate) struct Frame {
     pub(crate) focus: Option<FocusId>,
     pub(crate) window_active: bool,
-    pub(crate) element_states: FxHashMap<(GlobalElementId, TypeId), ElementStateBox>,
+    pub(crate) element_states: HashMap<(GlobalElementId, TypeId), ElementStateBox>,
     accessed_element_states: Vec<(GlobalElementId, TypeId)>,
     pub(crate) mouse_listeners: Vec<Option<AnyMouseListener>>,
     pub(crate) dispatch_tree: DispatchTree,
@@ -409,7 +409,7 @@ pub(crate) struct Frame {
     pub(crate) tooltip_requests: Vec<Option<TooltipRequest>>,
     pub(crate) cursor_styles: Vec<CursorStyleRequest>,
     #[cfg(any(test, feature = "test-support"))]
-    pub(crate) debug_bounds: FxHashMap<String, Bounds<Pixels>>,
+    pub(crate) debug_bounds: HashMap<String, Bounds<Pixels>>,
 }
 
 #[derive(Clone, Default)]
@@ -437,7 +437,7 @@ impl Frame {
         Frame {
             focus: None,
             window_active: false,
-            element_states: FxHashMap::default(),
+            element_states: HashMap::default(),
             accessed_element_states: Vec::new(),
             mouse_listeners: Vec::new(),
             dispatch_tree,
@@ -449,7 +449,7 @@ impl Frame {
             cursor_styles: Vec::new(),
 
             #[cfg(any(test, feature = "test-support"))]
-            debug_bounds: FxHashMap::default(),
+            debug_bounds: HashMap::default(),
         }
     }
 
@@ -528,7 +528,7 @@ pub struct Window {
     pub(crate) next_tooltip_id: TooltipId,
     pub(crate) tooltip_bounds: Option<TooltipBounds>,
     next_frame_callbacks: Rc<RefCell<Vec<FrameCallback>>>,
-    pub(crate) dirty_views: FxHashSet<EntityId>,
+    pub(crate) dirty_views: HashSet<EntityId>,
     pub(crate) focus_handles: Arc<RwLock<SlotMap<FocusId, AtomicUsize>>>,
     focus_listeners: SubscriberSet<(), AnyWindowFocusListener>,
     focus_lost_listeners: SubscriberSet<(), AnyObserver>,
@@ -828,7 +828,7 @@ impl Window {
             next_hitbox_id: HitboxId::default(),
             next_tooltip_id: TooltipId::default(),
             tooltip_bounds: None,
-            dirty_views: FxHashSet::default(),
+            dirty_views: HashSet::default(),
             focus_handles: Arc::new(RwLock::new(SlotMap::with_key())),
             focus_listeners: SubscriberSet::new(),
             focus_lost_listeners: SubscriberSet::new(),

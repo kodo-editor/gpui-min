@@ -1,6 +1,5 @@
 use crate::{px, FontId, FontRun, Pixels, PlatformTextSystem};
-use collections::HashMap;
-use std::{iter, sync::Arc};
+use std::{collections::HashMap, iter, sync::Arc};
 
 /// The GPUI line wrapper, used to wrap lines of text to a given width.
 pub struct LineWrapper {

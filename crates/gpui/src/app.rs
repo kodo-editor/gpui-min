@@ -1,6 +1,7 @@
 use std::{
     any::{type_name, TypeId},
     cell::{Ref, RefCell, RefMut},
+    collections::{HashMap, HashSet, VecDeque},
     marker::PhantomData,
     ops::{Deref, DerefMut},
     path::{Path, PathBuf},
@@ -17,9 +18,7 @@ use smol::future::FutureExt;
 use time::UtcOffset;
 
 pub use async_context::*;
-use collections::{FxHashMap, FxHashSet, VecDeque};
 pub use entity_map::*;
-use http::{self, HttpClient};
 pub use model_context::*;
 #[cfg(any(test, feature = "test-support"))]
 pub use test_context::*;
@@ -112,11 +111,7 @@ impl App {
         #[cfg(any(test, feature = "test-support"))]
         log::info!("GPUI was compiled in test mode");
 
-        Self(AppContext::new(
-            current_platform(),
-            Arc::new(()),
-            http::client(None),
-        ))
+        Self(AppContext::new(current_platform(), Arc::new(())))
     }
 
     /// Assign
@@ -209,22 +204,21 @@ pub struct AppContext {
     pub(crate) active_drag: Option<AnyDrag>,
     pub(crate) background_executor: BackgroundExecutor,
     pub(crate) foreground_executor: ForegroundExecutor,
-    pub(crate) loading_assets: FxHashMap<(TypeId, u64), Box<dyn Any>>,
+    pub(crate) loading_assets: HashMap<(TypeId, u64), Box<dyn Any>>,
     pub(crate) asset_cache: AssetCache,
     asset_source: Arc<dyn AssetSource>,
     pub(crate) svg_renderer: SvgRenderer,
-    http_client: Arc<dyn HttpClient>,
-    pub(crate) globals_by_type: FxHashMap<TypeId, Box<dyn Any>>,
+    pub(crate) globals_by_type: HashMap<TypeId, Box<dyn Any>>,
     pub(crate) entities: EntityMap,
     pub(crate) new_view_observers: SubscriberSet<TypeId, NewViewListener>,
     pub(crate) windows: SlotMap<WindowId, Option<Window>>,
-    pub(crate) window_handles: FxHashMap<WindowId, AnyWindowHandle>,
+    pub(crate) window_handles: HashMap<WindowId, AnyWindowHandle>,
     pub(crate) keymap: Rc<RefCell<Keymap>>,
     pub(crate) global_action_listeners:
-        FxHashMap<TypeId, Vec<Rc<dyn Fn(&dyn Any, DispatchPhase, &mut Self)>>>,
+        HashMap<TypeId, Vec<Rc<dyn Fn(&dyn Any, DispatchPhase, &mut Self)>>>,
     pending_effects: VecDeque<Effect>,
-    pub(crate) pending_notifications: FxHashSet<EntityId>,
-    pub(crate) pending_global_notifications: FxHashSet<TypeId>,
+    pub(crate) pending_notifications: HashSet<EntityId>,
+    pub(crate) pending_global_notifications: HashSet<TypeId>,
     pub(crate) observers: SubscriberSet<EntityId, Handler>,
     // TypeId is the type of the event that the listener callback expects
     pub(crate) event_listeners: SubscriberSet<EntityId, (TypeId, Listener)>,
@@ -242,7 +236,6 @@ impl AppContext {
     pub(crate) fn new(
         platform: Rc<dyn Platform>,
         asset_source: Arc<dyn AssetSource>,
-        http_client: Arc<dyn HttpClient>,
     ) -> Rc<AppCell> {
         let executor = platform.background_executor();
         let foreground_executor = platform.foreground_executor();
@@ -269,17 +262,16 @@ impl AppContext {
                 asset_cache: AssetCache::new(),
                 loading_assets: Default::default(),
                 asset_source,
-                http_client,
-                globals_by_type: FxHashMap::default(),
+                globals_by_type: HashMap::default(),
                 entities,
                 new_view_observers: SubscriberSet::new(),
-                window_handles: FxHashMap::default(),
+                window_handles: HashMap::default(),
                 windows: SlotMap::with_key(),
                 keymap: Rc::new(RefCell::new(Keymap::default())),
-                global_action_listeners: FxHashMap::default(),
+                global_action_listeners: HashMap::default(),
                 pending_effects: VecDeque::new(),
-                pending_notifications: FxHashSet::default(),
-                pending_global_notifications: FxHashSet::default(),
+                pending_notifications: HashSet::default(),
+                pending_global_notifications: HashSet::default(),
                 observers: SubscriberSet::new(),
                 event_listeners: SubscriberSet::new(),
                 release_listeners: SubscriberSet::new(),
@@ -645,16 +637,6 @@ impl AppContext {
     /// Returns the local timezone at the platform level.
     pub fn local_timezone(&self) -> UtcOffset {
         self.platform.local_timezone()
-    }
-
-    /// Updates the http client assigned to GPUI
-    pub fn update_http_client(&mut self, new_client: Arc<dyn HttpClient>) {
-        self.http_client = new_client;
-    }
-
-    /// Returns the http client assigned to GPUI
-    pub fn http_client(&self) -> Arc<dyn HttpClient> {
-        self.http_client.clone()
     }
 
     /// Returns the SVG renderer GPUI uses

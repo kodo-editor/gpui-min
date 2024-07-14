@@ -1,7 +1,0 @@
-[
-  {
-    "label": "clippy",
-    "command": "./script/clippy",
-    "args": []
-  }
-]

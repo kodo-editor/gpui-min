@@ -3,29 +3,41 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-unstable";
+    fenix = {
+      url = "github:nix-community/fenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs =
-    { self, nixpkgs }:
-    let
-      inherit (self) outputs;
-      systems = [
-        "aarch64-linux"
-        "x86_64-linux"
-        "aarch64-darwin"
-        "x86_64-darwin"
-      ];
-      forAllSystems = nixpkgs.lib.genAttrs systems;
+  outputs = {
+    self,
+    fenix,
+    nixpkgs,
+  }: let
+    systems = [
+      "aarch64-linux"
+      "x86_64-linux"
+      "aarch64-darwin"
+      "x86_64-darwin"
+    ];
+    forAllSystems = nixpkgs.lib.genAttrs systems;
+  in {
+    formatter = forAllSystems (system: let
+      pkgs = import nixpkgs {inherit system;};
     in
-    {
-      devShells = forAllSystems (
-        system:
-        let
-          pkgs = import nixpkgs { inherit system; };
-        in
-        {
-          default = import ./shell.nix { inherit pkgs; };
-        }
-      );
-    };
+      pkgs.alejandra);
+    devShells = forAllSystems (
+      system: let
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [fenix.overlays.default];
+        };
+      in {
+        default = import ./shell.nix {
+          inherit pkgs;
+          include-rust = true;
+        };
+      }
+    );
+  };
 }

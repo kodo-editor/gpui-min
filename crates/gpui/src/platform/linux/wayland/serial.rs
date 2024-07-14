@@ -1,4 +1,4 @@
-use collections::HashMap;
+use std::collections::HashMap;
 
 #[derive(Debug, Hash, PartialEq, Eq)]
 pub(crate) enum SerialKind {

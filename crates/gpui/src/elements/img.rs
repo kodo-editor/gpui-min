@@ -5,23 +5,19 @@ use std::sync::Arc;
 use crate::{
     point, px, size, AbsoluteLength, Asset, Bounds, DefiniteLength, DevicePixels, Element,
     ElementId, GlobalElementId, Hitbox, ImageData, InteractiveElement, Interactivity, IntoElement,
-    LayoutId, Length, Pixels, SharedUri, Size, StyleRefinement, Styled, SvgSize, UriOrPath,
-    WindowContext,
+    LayoutId, Length, Pixels, Size, StyleRefinement, Styled, SvgSize, WindowContext,
 };
-use futures::{AsyncReadExt, Future};
+use futures::Future;
 use image::{ImageBuffer, ImageError};
 #[cfg(target_os = "macos")]
 use media::core_video::CVImageBuffer;
 
-use http;
 use thiserror::Error;
 use util::ResultExt;
 
 /// A source of image content.
 #[derive(Clone, Debug)]
 pub enum ImageSource {
-    /// Image content will be loaded from provided URI at render time.
-    Uri(SharedUri),
     /// Image content will be loaded from the provided file at render time.
     File(Arc<PathBuf>),
     /// Cached image data
@@ -32,21 +28,15 @@ pub enum ImageSource {
     Surface(CVImageBuffer),
 }
 
-impl From<SharedUri> for ImageSource {
-    fn from(value: SharedUri) -> Self {
-        Self::Uri(value)
-    }
-}
-
 impl From<&'static str> for ImageSource {
     fn from(uri: &'static str) -> Self {
-        Self::Uri(uri.into())
+        Self::File(Arc::new(uri.into()))
     }
 }
 
 impl From<String> for ImageSource {
     fn from(uri: String) -> Self {
-        Self::Uri(uri.into())
+        Self::File(Arc::new(uri.into()))
     }
 }
 
@@ -335,15 +325,7 @@ impl InteractiveElement for Img {
 impl ImageSource {
     fn data(&self, cx: &mut WindowContext) -> Option<Arc<ImageData>> {
         match self {
-            ImageSource::Uri(_) | ImageSource::File(_) => {
-                let uri_or_path: UriOrPath = match self {
-                    ImageSource::Uri(uri) => uri.clone().into(),
-                    ImageSource::File(path) => path.clone().into(),
-                    _ => unreachable!(),
-                };
-
-                cx.use_cached_asset::<Image>(&uri_or_path)?.log_err()
-            }
+            ImageSource::File(path) => cx.use_cached_asset::<Image>(&path)?.log_err(),
 
             ImageSource::Data(data) => Some(data.to_owned()),
             #[cfg(target_os = "macos")]
@@ -356,32 +338,17 @@ impl ImageSource {
 enum Image {}
 
 impl Asset for Image {
-    type Source = UriOrPath;
+    type Source = Arc<PathBuf>;
     type Output = Result<Arc<ImageData>, ImageCacheError>;
 
     fn load(
         source: Self::Source,
         cx: &mut WindowContext,
     ) -> impl Future<Output = Self::Output> + Send + 'static {
-        let client = cx.http_client();
         let scale_factor = cx.scale_factor();
         let svg_renderer = cx.svg_renderer();
         async move {
-            let bytes = match source.clone() {
-                UriOrPath::Path(uri) => fs::read(uri.as_ref())?,
-                UriOrPath::Uri(uri) => {
-                    let mut response = client.get(uri.as_ref(), ().into(), true).await?;
-                    let mut body = Vec::new();
-                    response.body_mut().read_to_end(&mut body).await?;
-                    if !response.status().is_success() {
-                        return Err(ImageCacheError::BadStatus {
-                            status: response.status(),
-                            body: String::from_utf8_lossy(&body).into_owned(),
-                        });
-                    }
-                    body
-                }
-            };
+            let bytes = fs::read(source.as_ref())?;
 
             let data = if let Ok(format) = image::guess_format(&bytes) {
                 let mut data = image::load_from_memory_with_format(&bytes, format)?.into_rgba8();
@@ -410,20 +377,9 @@ impl Asset for Image {
 /// An error that can occur when interacting with the image cache.
 #[derive(Debug, Error, Clone)]
 pub enum ImageCacheError {
-    /// An error that occurred while fetching an image from a remote source.
-    #[error("http error: {0}")]
-    Client(#[from] http::Error),
     /// An error that occurred while reading the image from disk.
     #[error("IO error: {0}")]
     Io(Arc<std::io::Error>),
-    /// An error that occurred while processing an image.
-    #[error("unexpected http status: {status}, body: {body}")]
-    BadStatus {
-        /// The HTTP status code.
-        status: http::StatusCode,
-        /// The HTTP response body.
-        body: String,
-    },
     /// An error that occurred while processing an image.
     #[error("image error: {0}")]
     Image(Arc<ImageError>),

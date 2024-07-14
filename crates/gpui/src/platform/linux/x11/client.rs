@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::ops::Deref;
 use std::path::PathBuf;
 use std::rc::{Rc, Weak};
@@ -8,7 +8,6 @@ use std::time::{Duration, Instant};
 use calloop::generic::{FdWrapper, Generic};
 use calloop::{EventLoop, LoopHandle, RegistrationToken};
 
-use collections::HashMap;
 use util::ResultExt;
 
 use x11rb::connection::{Connection, RequestConnection};

@@ -1,4 +1,5 @@
 use std::{
+    collections::HashSet,
     hash::{Hash, Hasher},
     iter, mem,
     ops::Range,
@@ -10,7 +11,6 @@ use crate::{
     Hsla, Length, Pixels, Point, PointRefinement, Rgba, SharedString, Size, SizeRefinement, Styled,
     TextRun, WindowContext,
 };
-use collections::HashSet;
 use refineable::Refineable;
 use smallvec::SmallVec;
 pub use taffy::style::{
@@ -752,7 +752,7 @@ pub fn combine_highlights(
     endpoints.sort_unstable_by_key(|(position, _, _)| *position);
     let mut endpoints = endpoints.into_iter().peekable();
 
-    let mut active_styles = HashSet::default();
+    let mut active_styles = HashSet::<usize>::default();
     let mut ix = 0;
     iter::from_fn(move || {
         while let Some((endpoint_ix, highlight_id, is_start)) = endpoints.peek() {

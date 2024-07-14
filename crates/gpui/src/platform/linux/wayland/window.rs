@@ -1,11 +1,11 @@
 use std::cell::{Ref, RefCell, RefMut};
+use std::collections::HashMap;
 use std::ffi::c_void;
 use std::ptr::NonNull;
 use std::rc::Rc;
 use std::sync::Arc;
 
 use blade_graphics as gpu;
-use collections::HashMap;
 use futures::channel::oneshot::Receiver;
 
 use raw_window_handle as rwh;

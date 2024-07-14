@@ -1,9 +1,11 @@
 use crate::SharedString;
 use anyhow::{anyhow, Context, Result};
-use collections::HashMap;
 pub use no_action::NoAction;
 use serde_json::json;
-use std::any::{Any, TypeId};
+use std::{
+    any::{Any, TypeId},
+    collections::HashMap,
+};
 
 /// Actions are used to implement keyboard-driven UI.
 /// When you declare an action, you can bind keys to the action in the keymap and

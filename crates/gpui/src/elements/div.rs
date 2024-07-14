@@ -23,13 +23,13 @@ use crate::{
     ParentElement, Pixels, Point, Render, ScrollWheelEvent, SharedString, Size, Style,
     StyleRefinement, Styled, Task, TooltipId, View, Visibility, WindowContext,
 };
-use collections::HashMap;
 use refineable::Refineable;
 use smallvec::SmallVec;
 use std::{
     any::{Any, TypeId},
     cell::RefCell,
     cmp::Ordering,
+    collections::HashMap,
     fmt::Debug,
     marker::PhantomData,
     mem,

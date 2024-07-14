@@ -1,29 +1,12 @@
-use crate::{SharedUri, WindowContext};
-use collections::FxHashMap;
+use crate::WindowContext;
 use futures::Future;
 use parking_lot::Mutex;
+use std::any::Any;
 use std::any::TypeId;
+use std::collections::HashMap;
+use std::hash::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
-use std::{any::Any, path::PathBuf};
-
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
-pub(crate) enum UriOrPath {
-    Uri(SharedUri),
-    Path(Arc<PathBuf>),
-}
-
-impl From<SharedUri> for UriOrPath {
-    fn from(value: SharedUri) -> Self {
-        Self::Uri(value)
-    }
-}
-
-impl From<Arc<PathBuf>> for UriOrPath {
-    fn from(value: Arc<PathBuf>) -> Self {
-        Self::Path(value)
-    }
-}
 
 /// A trait for asynchronous asset loading.
 pub trait Asset {
@@ -42,7 +25,7 @@ pub trait Asset {
 
 /// Use a quick, non-cryptographically secure hash function to get an identifier from data
 pub fn hash<T: Hash>(data: &T) -> u64 {
-    let mut hasher = collections::FxHasher::default();
+    let mut hasher = DefaultHasher::default();
     data.hash(&mut hasher);
     hasher.finish()
 }
@@ -50,7 +33,7 @@ pub fn hash<T: Hash>(data: &T) -> u64 {
 /// A cache for assets.
 #[derive(Clone)]
 pub struct AssetCache {
-    assets: Arc<Mutex<FxHashMap<(TypeId, u64), Box<dyn Any + Send>>>>,
+    assets: Arc<Mutex<HashMap<(TypeId, u64), Box<dyn Any + Send>>>>,
 }
 
 impl AssetCache {

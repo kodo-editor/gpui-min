@@ -104,11 +104,10 @@ impl TestAppContext {
         let foreground_executor = ForegroundExecutor::new(arc_dispatcher);
         let platform = TestPlatform::new(background_executor.clone(), foreground_executor.clone());
         let asset_source = Arc::new(());
-        let http_client = http::FakeHttpClient::with_404_response();
         let text_system = Arc::new(TextSystem::new(platform.text_system()));
 
         Self {
-            app: AppContext::new(platform.clone(), asset_source, http_client),
+            app: AppContext::new(platform.clone(), asset_source),
             background_executor,
             foreground_executor,
             dispatcher: dispatcher.clone(),

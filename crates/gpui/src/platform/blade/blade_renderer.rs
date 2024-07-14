@@ -8,7 +8,6 @@ use crate::{
     Underline,
 };
 use bytemuck::{Pod, Zeroable};
-use collections::HashMap;
 #[cfg(target_os = "macos")]
 use media::core_video::CVMetalTextureCache;
 #[cfg(target_os = "macos")]
@@ -16,7 +15,7 @@ use std::{ffi::c_void, ptr::NonNull};
 
 use blade_graphics as gpu;
 use blade_util::{BufferBelt, BufferBeltDescriptor};
-use std::{mem, sync::Arc};
+use std::{collections::HashMap, mem, sync::Arc};
 
 const MAX_FRAME_TIME_MS: u32 = 1000;
 
@@ -464,7 +463,7 @@ impl BladeRenderer {
     #[profiling::function]
     fn rasterize_paths(&mut self, paths: &[Path<ScaledPixels>]) {
         self.path_tiles.clear();
-        let mut vertices_by_texture_id = HashMap::default();
+        let mut vertices_by_texture_id = HashMap::<_, Vec<PathVertex<ScaledPixels>>>::default();
 
         for path in paths {
             let clipped_bounds = path.bounds.intersect(&path.content_mask.bounds);

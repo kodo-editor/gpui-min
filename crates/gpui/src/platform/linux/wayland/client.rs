@@ -1,4 +1,5 @@
 use std::cell::{RefCell, RefMut};
+use std::collections::HashMap;
 use std::hash::Hash;
 use std::os::fd::{AsRawFd, BorrowedFd};
 use std::path::PathBuf;
@@ -8,7 +9,6 @@ use std::time::{Duration, Instant};
 use calloop::timer::{TimeoutAction, Timer};
 use calloop::{EventLoop, LoopHandle};
 use calloop_wayland_source::WaylandSource;
-use collections::HashMap;
 use filedescriptor::Pipe;
 
 use smallvec::SmallVec;

@@ -2,9 +2,11 @@ use crate::{
     AbsoluteLength, Bounds, DefiniteLength, Edges, Length, Pixels, Point, Size, Style,
     WindowContext,
 };
-use collections::{FxHashMap, FxHashSet};
 use smallvec::SmallVec;
-use std::fmt::Debug;
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Debug,
+};
 use taffy::{
     geometry::{Point as TaffyPoint, Rect as TaffyRect, Size as TaffySize},
     style::AvailableSpace as TaffyAvailableSpace,
@@ -17,11 +19,11 @@ type NodeMeasureFn =
 
 pub struct TaffyLayoutEngine {
     taffy: TaffyTree<()>,
-    styles: FxHashMap<LayoutId, Style>,
-    children_to_parents: FxHashMap<LayoutId, LayoutId>,
-    absolute_layout_bounds: FxHashMap<LayoutId, Bounds<Pixels>>,
-    computed_layouts: FxHashSet<LayoutId>,
-    nodes_to_measure: FxHashMap<LayoutId, NodeMeasureFn>,
+    styles: HashMap<LayoutId, Style>,
+    children_to_parents: HashMap<LayoutId, LayoutId>,
+    absolute_layout_bounds: HashMap<LayoutId, Bounds<Pixels>>,
+    computed_layouts: HashSet<LayoutId>,
+    nodes_to_measure: HashMap<LayoutId, NodeMeasureFn>,
 }
 
 static EXPECT_MESSAGE: &str = "we should avoid taffy layout errors by construction if possible";
@@ -30,11 +32,11 @@ impl TaffyLayoutEngine {
     pub fn new() -> Self {
         TaffyLayoutEngine {
             taffy: TaffyTree::new(),
-            styles: FxHashMap::default(),
-            children_to_parents: FxHashMap::default(),
-            absolute_layout_bounds: FxHashMap::default(),
-            computed_layouts: FxHashSet::default(),
-            nodes_to_measure: FxHashMap::default(),
+            styles: HashMap::default(),
+            children_to_parents: HashMap::default(),
+            absolute_layout_bounds: HashMap::default(),
+            computed_layouts: HashSet::default(),
+            nodes_to_measure: HashMap::default(),
         }
     }
 

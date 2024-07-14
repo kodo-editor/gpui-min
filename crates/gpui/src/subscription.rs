@@ -1,6 +1,12 @@
-use collections::{BTreeMap, BTreeSet};
 use parking_lot::Mutex;
-use std::{cell::Cell, fmt::Debug, mem, rc::Rc, sync::Arc};
+use std::{
+    cell::Cell,
+    collections::{BTreeMap, BTreeSet},
+    fmt::Debug,
+    mem,
+    rc::Rc,
+    sync::Arc,
+};
 use util::post_inc;
 
 pub(crate) struct SubscriberSet<EmitterKey, Callback>(

@@ -15,7 +15,6 @@ use crate::{
     StrikethroughStyle, UnderlineStyle,
 };
 use anyhow::anyhow;
-use collections::{BTreeSet, FxHashMap};
 use core::fmt;
 use derive_more::Deref;
 use itertools::Itertools;
@@ -24,6 +23,7 @@ use smallvec::{smallvec, SmallVec};
 use std::{
     borrow::Cow,
     cmp,
+    collections::{BTreeSet, HashMap},
     fmt::{Debug, Display, Formatter},
     hash::{Hash, Hasher},
     ops::{Deref, DerefMut, Range},
@@ -44,10 +44,10 @@ pub(crate) const SUBPIXEL_VARIANTS: u8 = 4;
 /// The GPUI text rendering sub system.
 pub struct TextSystem {
     platform_text_system: Arc<dyn PlatformTextSystem>,
-    font_ids_by_font: RwLock<FxHashMap<Font, Result<FontId>>>,
-    font_metrics: RwLock<FxHashMap<FontId, FontMetrics>>,
-    raster_bounds: RwLock<FxHashMap<RenderGlyphParams, Bounds<DevicePixels>>>,
-    wrapper_pool: Mutex<FxHashMap<FontIdWithSize, Vec<LineWrapper>>>,
+    font_ids_by_font: RwLock<HashMap<Font, Result<FontId>>>,
+    font_metrics: RwLock<HashMap<FontId, FontMetrics>>,
+    raster_bounds: RwLock<HashMap<RenderGlyphParams, Bounds<DevicePixels>>>,
+    wrapper_pool: Mutex<HashMap<FontIdWithSize, Vec<LineWrapper>>>,
     font_runs_pool: Mutex<Vec<Vec<FontRun>>>,
     fallback_font_stack: SmallVec<[Font; 2]>,
 }

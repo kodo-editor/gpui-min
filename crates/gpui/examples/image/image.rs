@@ -34,7 +34,6 @@ impl RenderOnce for ImageContainer {
 
 struct ImageShowcase {
     local_resource: Arc<PathBuf>,
-    remote_resource: SharedUri,
 }
 
 impl Render for ImageShowcase {
@@ -50,10 +49,6 @@ impl Render for ImageShowcase {
             .child(ImageContainer::new(
                 "Image loaded from a local file",
                 self.local_resource.clone(),
-            ))
-            .child(ImageContainer::new(
-                "Image loaded from a remote resource",
-                self.remote_resource.clone(),
             ))
     }
 }
@@ -91,7 +86,6 @@ fn main() {
             cx.new_view(|_cx| ImageShowcase {
                 // Relative path to your root project path
                 local_resource: Arc::new(PathBuf::from_str("examples/image/app-icon.png").unwrap()),
-                remote_resource: "https://picsum.photos/512/512".into(),
             })
         })
         .unwrap();

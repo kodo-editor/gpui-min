@@ -4,7 +4,6 @@ use crate::{
     ShapedGlyph, SharedString, Size,
 };
 use anyhow::{anyhow, Context, Ok, Result};
-use collections::HashMap;
 use cosmic_text::{
     Attrs, AttrsList, CacheKey, Family, Font as CosmicTextFont, FontSystem, ShapeBuffer, ShapeLine,
     SwashCache,
@@ -17,7 +16,7 @@ use pathfinder_geometry::{
     vector::{Vector2F, Vector2I},
 };
 use smallvec::SmallVec;
-use std::{borrow::Cow, sync::Arc};
+use std::{borrow::Cow, collections::HashMap, sync::Arc};
 
 pub(crate) struct CosmicTextSystem(RwLock<CosmicTextSystemState>);
 
