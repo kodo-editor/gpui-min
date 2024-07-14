@@ -25,15 +25,6 @@ use core_text::{
     line::CTLine,
     string_attributes::kCTFontAttributeName,
 };
-use font_kit::{
-    font::Font as FontKitFont,
-    handle::Handle,
-    hinting::HintingOptions,
-    metrics::Metrics,
-    properties::{Style as FontkitStyle, Weight as FontkitWeight},
-    source::SystemSource,
-    sources::mem::MemSource,
-};
 use parking_lot::{RwLock, RwLockUpgradableReadGuard};
 use pathfinder_geometry::{
     rect::{RectF, RectI},

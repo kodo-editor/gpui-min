@@ -28,7 +28,6 @@ in
       buildInputs = with pkgs; [
         curl
         fontconfig
-        freetype
         libgit2
         openssl
         sqlite

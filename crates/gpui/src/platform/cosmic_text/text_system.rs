@@ -16,7 +16,7 @@ use pathfinder_geometry::{
     vector::{Vector2F, Vector2I},
 };
 use smallvec::SmallVec;
-use std::{borrow::Cow, collections::HashMap, sync::Arc};
+use std::{borrow::Cow, collections::HashMap, path::PathBuf, sync::Arc};
 
 pub(crate) struct CosmicTextSystem(RwLock<CosmicTextSystemState>);
 
@@ -103,13 +103,12 @@ impl PlatformTextSystem for CosmicTextSystem {
             .map(|font_id| {
                 let database_id = state.loaded_fonts_store[font_id.0].id();
                 let face_info = state.font_system.db().face(database_id).expect("");
-                face_info_into_properties(face_info)
+                face_info.clone()
             })
             .collect::<SmallVec<[_; 4]>>();
 
-        let ix =
-            font_kit::matching::find_best_match(&candidate_properties, &font_into_properties(font))
-                .context("requested font family contains no font matching the other parameters")?;
+        let ix = find_best_match(&candidate_properties, &font.into())
+            .context("requested font family contains no font matching the other parameters")?;
 
         Ok(candidates[ix])
     }
@@ -500,39 +499,192 @@ impl From<FontStyle> for cosmic_text::Style {
     }
 }
 
-fn font_into_properties(font: &crate::Font) -> font_kit::properties::Properties {
-    font_kit::properties::Properties {
-        style: match font.style {
-            crate::FontStyle::Normal => font_kit::properties::Style::Normal,
-            crate::FontStyle::Italic => font_kit::properties::Style::Italic,
-            crate::FontStyle::Oblique => font_kit::properties::Style::Oblique,
-        },
-        weight: font_kit::properties::Weight(font.weight.0),
-        stretch: Default::default(),
+#[derive(Debug, thiserror::Error)]
+#[error("no matching font could be found")]
+struct MatchNotFound;
+
+fn stretch_to_num(stretch: cosmic_text::Stretch) -> u32 {
+    match stretch {
+        cosmic_text::Stretch::UltraCondensed => 100,
+        cosmic_text::Stretch::ExtraCondensed => 101,
+        cosmic_text::Stretch::Condensed => 102,
+        cosmic_text::Stretch::SemiCondensed => 103,
+        cosmic_text::Stretch::Normal => 104,
+        cosmic_text::Stretch::SemiExpanded => 105,
+        cosmic_text::Stretch::Expanded => 107,
+        cosmic_text::Stretch::ExtraExpanded => 108,
+        cosmic_text::Stretch::UltraExpanded => 109,
     }
 }
 
-fn face_info_into_properties(
-    face_info: &cosmic_text::fontdb::FaceInfo,
-) -> font_kit::properties::Properties {
-    font_kit::properties::Properties {
-        style: match face_info.style {
-            cosmic_text::Style::Normal => font_kit::properties::Style::Normal,
-            cosmic_text::Style::Italic => font_kit::properties::Style::Italic,
-            cosmic_text::Style::Oblique => font_kit::properties::Style::Oblique,
-        },
-        // both libs use the same values for weight
-        weight: font_kit::properties::Weight(face_info.weight.0.into()),
-        stretch: match face_info.stretch {
-            cosmic_text::Stretch::Condensed => font_kit::properties::Stretch::CONDENSED,
-            cosmic_text::Stretch::Expanded => font_kit::properties::Stretch::EXPANDED,
-            cosmic_text::Stretch::ExtraCondensed => font_kit::properties::Stretch::EXTRA_CONDENSED,
-            cosmic_text::Stretch::ExtraExpanded => font_kit::properties::Stretch::EXTRA_EXPANDED,
-            cosmic_text::Stretch::Normal => font_kit::properties::Stretch::NORMAL,
-            cosmic_text::Stretch::SemiCondensed => font_kit::properties::Stretch::SEMI_CONDENSED,
-            cosmic_text::Stretch::SemiExpanded => font_kit::properties::Stretch::SEMI_EXPANDED,
-            cosmic_text::Stretch::UltraCondensed => font_kit::properties::Stretch::ULTRA_CONDENSED,
-            cosmic_text::Stretch::UltraExpanded => font_kit::properties::Stretch::ULTRA_EXPANDED,
-        },
+fn find_best_match(
+    candidates: &[cosmic_text::fontdb::FaceInfo],
+    query: &cosmic_text::fontdb::FaceInfo,
+) -> Result<usize, MatchNotFound> {
+    // Step 4.
+    let mut matching_set: Vec<usize> = (0..candidates.len()).collect();
+    if matching_set.is_empty() {
+        return Err(MatchNotFound);
+    }
+
+    // Step 4a (`font-stretch`).
+    let matching_stretch = if matching_set
+        .iter()
+        .any(|&index| candidates[index].stretch == query.stretch)
+    {
+        // Exact match.
+        query.stretch
+    } else if query.stretch <= cosmic_text::Stretch::Normal {
+        // Closest width, first checking narrower values and then wider values.
+        match matching_set
+            .iter()
+            .filter(|&&index| candidates[index].stretch < query.stretch)
+            .min_by_key(|&&index| {
+                stretch_to_num(query.stretch) - stretch_to_num(candidates[index].stretch)
+            }) {
+            Some(&matching_index) => candidates[matching_index].stretch,
+            None => {
+                let matching_index = *matching_set
+                    .iter()
+                    .min_by_key(|&&index| {
+                        stretch_to_num(candidates[index].stretch) - stretch_to_num(query.stretch)
+                    })
+                    .unwrap();
+                candidates[matching_index].stretch
+            }
+        }
+    } else {
+        // Closest width, first checking wider values and then narrower values.
+        match matching_set
+            .iter()
+            .filter(|&&index| candidates[index].stretch > query.stretch)
+            .min_by_key(|&&index| {
+                stretch_to_num(candidates[index].stretch) - stretch_to_num(query.stretch)
+            }) {
+            Some(&matching_index) => candidates[matching_index].stretch,
+            None => {
+                let matching_index = *matching_set
+                    .iter()
+                    .min_by_key(|&&index| {
+                        stretch_to_num(query.stretch) - stretch_to_num(candidates[index].stretch)
+                    })
+                    .unwrap();
+                candidates[matching_index].stretch
+            }
+        }
+    };
+    matching_set.retain(|&index| candidates[index].stretch == matching_stretch);
+
+    // Step 4b (`font-style`).
+    let style_preference = match query.style {
+        cosmic_text::Style::Italic => [
+            cosmic_text::Style::Italic,
+            cosmic_text::Style::Oblique,
+            cosmic_text::Style::Normal,
+        ],
+        cosmic_text::Style::Oblique => [
+            cosmic_text::Style::Oblique,
+            cosmic_text::Style::Italic,
+            cosmic_text::Style::Normal,
+        ],
+        cosmic_text::Style::Normal => [
+            cosmic_text::Style::Normal,
+            cosmic_text::Style::Oblique,
+            cosmic_text::Style::Italic,
+        ],
+    };
+    let matching_style = *style_preference
+        .iter()
+        .find(|&query_style| {
+            matching_set
+                .iter()
+                .any(|&index| candidates[index].style == *query_style)
+        })
+        .unwrap();
+    matching_set.retain(|&index| candidates[index].style == matching_style);
+
+    // Step 4c (`font-weight`).
+    //
+    // The spec doesn't say what to do if the weight is between 400 and 500 exclusive, so we
+    // just use 450 as the cutoff.
+    let matching_weight = if matching_set
+        .iter()
+        .any(|&index| candidates[index].weight == query.weight)
+    {
+        query.weight
+    } else if query.weight >= cosmic_text::Weight(400)
+        && query.weight < cosmic_text::Weight(450)
+        && matching_set
+            .iter()
+            .any(|&index| candidates[index].weight == cosmic_text::Weight(500))
+    {
+        // Check 500 first.
+        cosmic_text::Weight(500)
+    } else if query.weight >= cosmic_text::Weight(450)
+        && query.weight <= cosmic_text::Weight(500)
+        && matching_set
+            .iter()
+            .any(|&index| candidates[index].weight == cosmic_text::Weight(400))
+    {
+        // Check 400 first.
+        cosmic_text::Weight(400)
+    } else if query.weight <= cosmic_text::Weight(500) {
+        // Closest weight, first checking thinner values and then fatter ones.
+        match matching_set
+            .iter()
+            .filter(|&&index| candidates[index].weight <= query.weight)
+            .min_by_key(|&&index| query.weight.0 - candidates[index].weight.0)
+        {
+            Some(&matching_index) => candidates[matching_index].weight,
+            None => {
+                let matching_index = *matching_set
+                    .iter()
+                    .min_by_key(|&&index| (candidates[index].weight.0 - query.weight.0))
+                    .unwrap();
+                candidates[matching_index].weight
+            }
+        }
+    } else {
+        // Closest weight, first checking fatter values and then thinner ones.
+        match matching_set
+            .iter()
+            .filter(|&&index| candidates[index].weight >= query.weight)
+            .min_by_key(|&&index| (candidates[index].weight.0 - query.weight.0))
+        {
+            Some(&matching_index) => candidates[matching_index].weight,
+            None => {
+                let matching_index = *matching_set
+                    .iter()
+                    .min_by_key(|&&index| (query.weight.0 - candidates[index].weight.0))
+                    .unwrap();
+                candidates[matching_index].weight
+            }
+        }
+    };
+    matching_set.retain(|&index| candidates[index].weight == matching_weight);
+
+    // Step 4d concerns `font-size`, but fonts in `font-kit` are unsized, so we ignore that.
+
+    // Return the result.
+    matching_set.into_iter().next().ok_or(MatchNotFound)
+}
+
+impl From<&Font> for cosmic_text::fontdb::FaceInfo {
+    fn from(value: &Font) -> Self {
+        cosmic_text::fontdb::FaceInfo {
+            id: cosmic_text::fontdb::ID::dummy(),
+            source: cosmic_text::fontdb::Source::File(PathBuf::new()),
+            index: 0,
+            families: Vec::new(),
+            post_script_name: String::new(),
+            style: match value.style {
+                FontStyle::Normal => cosmic_text::Style::Normal,
+                FontStyle::Italic => cosmic_text::Style::Italic,
+                FontStyle::Oblique => cosmic_text::Style::Oblique,
+            },
+            weight: cosmic_text::Weight(value.weight.0.round() as u16),
+            stretch: cosmic_text::Stretch::Normal,
+            monospaced: true,
+        }
     }
 }
