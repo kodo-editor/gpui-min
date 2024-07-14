@@ -33,7 +33,6 @@ dirs = "4.0"
 env_logger = "0.9"
 futures = "0.3"
 futures-lite = "1.13"
-git2 = { version = "0.19", default-features = false }
 globset = "0.4"
 image = "0.25.1"
 itertools = "0.11.0"
@@ -52,7 +51,6 @@ serde_derive = { version = "1.0", features = ["deserialize_in_place"] }
 serde_json = { version = "1.0", features = ["preserve_order", "raw_value"] }
 smallvec = { version = "1.6", features = ["union"] }
 smol = "1.2"
-tempfile = "3.9.0"
 thiserror = "1.0.29"
 time = { version = "0.3", features = [
     "macros",

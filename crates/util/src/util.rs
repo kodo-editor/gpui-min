@@ -2,8 +2,6 @@ pub mod arc_cow;
 pub mod fs;
 pub mod paths;
 pub mod serde;
-#[cfg(any(test, feature = "test-support"))]
-pub mod test;
 
 use futures::Future;
 use rand::{seq::SliceRandom, Rng};
